@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticket Classifier</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080b12;
+      --surface: #0f1520;
+      --surface2: #151a28;
+      --border: #1e2538;
+      --border2: #252d40;
+      --accent: #3b82f6;
+      --accent-dim: #1e2d4a;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --muted2: #94a3b8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,.12), transparent 70%),
+        var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: .1s; }
+    .reveal-delay-2 { transition-delay: .2s; }
+    .reveal-delay-3 { transition-delay: .3s; }
+    .reveal-delay-4 { transition-delay: .4s; }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(8,11,18,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-cta,
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 13px 26px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .nav-cta {
+      font-size: 13px;
+      padding: 8px 18px;
+    }
+
+    .btn-primary:hover,
+    .nav-cta:hover {
+      opacity: .88;
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 32px 80px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 20%, rgba(59,130,246,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      color: var(--muted2);
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: .05em;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse-anim 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse-anim {
+      50% { opacity: .4; transform: scale(.7); }
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      max-width: 640px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--muted2);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      color: var(--muted2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 13px 22px;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      text-decoration: none;
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .demo-wrap {
+      width: 100%;
+      max-width: 1000px;
+      position: relative;
+      scroll-margin-top: 100px;
+      z-index: 1;
+    }
+
+    .classifier {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--surface);
+      text-align: left;
+      box-shadow: 0 30px 90px rgba(0,0,0,.35);
+    }
+
+    .cl-panel { padding: 24px; }
+
+    .cl-panel:first-child {
+      border-right: 1px solid var(--border);
+    }
+
+    .cl-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .cl-panel h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .cl-textarea {
+      width: 100%;
+      height: 132px;
+      resize: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .cl-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+    }
+
+    .cl-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: 'Space Grotesk', sans-serif;
+      gap: 10px;
+    }
+
+    .cl-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .cl-btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity .15s, transform .1s;
+    }
+
+    .cl-btn:hover { opacity: .85; }
+    .cl-btn:active { transform: scale(.97); }
+    .cl-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .cl-btn .ti-loader-2 {
+      animation: cl-spin .7s linear infinite;
+    }
+
+    @keyframes cl-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .cl-btn-primary { background: var(--accent); color: #fff; }
+    .cl-btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border2); }
+    .cl-btn-outline { background: transparent; color: var(--muted2); border: 1px solid var(--border2); }
+
+    .cl-header-result {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .cl-result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .cl-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 14px;
+    }
+
+    .cl-card.full { grid-column: 1 / -1; }
+
+    .cl-card span,
+    .cl-text-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .1em;
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .cl-card strong {
+      font-size: 14px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+    }
+
+    .cl-badge {
+      display: inline-flex;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    .cl-badge.baixa { color: #22c55e; background: rgba(34,197,94,.12); }
+    .cl-badge.media { color: #eab308; background: rgba(234,179,8,.12); }
+    .cl-badge.alta { color: #f97316; background: rgba(249,115,22,.12); }
+    .cl-badge.critica { color: #ef4444; background: rgba(239,68,68,.12); }
+
+    .cl-text-card {
+      margin-top: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 14px;
+    }
+
+    .cl-text-card p {
+      color: var(--muted2);
+      line-height: 1.65;
+      font-size: 12.5px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metric {
+      padding: 36px 24px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+
+    .metric:last-child { border-right: none; }
+
+    .metric-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .metric-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .section-full {
+      padding: 80px 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--accent);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      margin-bottom: 10px;
+    }
+
+    .section-sub {
+      font-size: 15px;
+      color: var(--muted2);
+      line-height: 1.65;
+      margin-bottom: 40px;
+      max-width: 480px;
+    }
+
+    .steps { display: flex; flex-direction: column; gap: 2px; }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .step-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-dim);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--muted2);
+      line-height: 1.6;
+    }
+
+    .step-connector {
+      width: 1px;
+      height: 16px;
+      background: var(--border2);
+      margin: 0 auto;
+    }
+
+    .feat-grid,
+    .types-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .feat-card,
+    .type-card,
+    .urg-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+    }
+
+    .feat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      background: var(--accent-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .feat-card h3,
+    .type-card strong {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .feat-card p,
+    .type-card span,
+    .urg-row p {
+      font-size: 13px;
+      color: var(--muted2);
+      line-height: 1.6;
+    }
+
+    .type-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .type-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .urg-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .urg-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+    }
+
+    .urg-badge {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      min-width: 78px;
+      text-align: center;
+    }
+
+    .u-c { background: rgba(239,68,68,.12); color: #ef4444; }
+    .u-a { background: rgba(249,115,22,.12); color: #f97316; }
+    .u-m { background: rgba(234,179,8,.12); color: #eab308; }
+    .u-b { background: rgba(34,197,94,.12); color: #22c55e; }
+
+    .stack-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tech-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 500;
+    }
+
+    .tech-pill i {
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .cta-section {
+      border-top: 1px solid var(--border);
+      padding: 100px 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .cta-section h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      letter-spacing: -.8px;
+      margin-bottom: 14px;
+    }
+
+    .cta-section p {
+      font-size: 15px;
+      color: var(--muted2);
+      margin-bottom: 36px;
+    }
+
+    .cta-section code {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .site-footer {
+      border-top: 1px solid var(--border);
+      padding: 22px 40px;
+      text-align: center;
+    }
+
+    .site-footer span {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    @media (max-width: 760px) {
+      nav { padding: 16px 20px; }
+
+      .classifier,
+      .metrics,
+      .feat-grid,
+      .types-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cl-panel:first-child {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .metric {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .metric:last-child { border-bottom: none; }
+
+      .hero-actions,
+      .cl-actions {
+        flex-direction: column;
+      }
+
+      .btn-primary,
+      .btn-ghost,
+      .cl-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="nav-logo">Ticket<span>Classifier</span></div>
+    <a class="nav-cta" href="#classificador">
+      <i class="ti ti-bolt"></i>
+      Abrir classificador
+    </a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-eyebrow reveal">
+      <div class="pulse"></div>
+      powered by OpenRouter
+    </div>
+
+    <h1 class="reveal reveal-delay-1">
+      Você ainda classifica<br>chamados <em>manualmente?</em>
+    </h1>
+
+    <p class="hero-sub reveal reveal-delay-2">
+      Cole uma mensagem de suporte e receba em segundos o tipo,
+      a urgência, um resumo e a ação recomendada, tudo via IA.
+    </p>
+
+    <div class="hero-actions reveal reveal-delay-3">
+      <a class="btn-primary" href="#classificador">
+        <i class="ti ti-bolt"></i>
+        Classificar agora
+      </a>
+
+      <a class="btn-ghost" href="#como-funciona">
+        <i class="ti ti-arrow-down"></i>
+        Ver como funciona
+      </a>
+    </div>
+
+    <div class="demo-wrap reveal reveal-delay-4" id="classificador">
+      <div class="classifier">
+        <div class="cl-panel">
+          <span class="cl-label">ENTRADA</span>
+          <h3>Mensagem do chamado</h3>
+
+          <textarea id="cl-input" class="cl-textarea" maxlength="2000" placeholder="Cole aqui a mensagem do chamado..."></textarea>
+
+          <div class="cl-info-row">
+            <span><span id="cl-count">0</span>/2000 caracteres</span>
+            <span>API protegida no back-end</span>
+          </div>
+
+          <div class="cl-actions">
+            <button class="cl-btn cl-btn-secondary" id="cl-example">
+              <i class="ti ti-sparkles"></i>
+              Usar exemplo
+            </button>
+
+            <button class="cl-btn cl-btn-outline" id="cl-clear">
+              <i class="ti ti-trash"></i>
+              Limpar
+            </button>
+
+            <button class="cl-btn cl-btn-primary" id="cl-classify">
+              <i class="ti ti-bolt"></i>
+              Classificar chamado
+            </button>
+          </div>
+        </div>
+
+        <div class="cl-panel">
+          <div class="cl-header-result">
+            <div>
+              <span class="cl-label">RESULTADO</span>
+              <h3>Classificação da IA</h3>
+            </div>
+          </div>
+
+          <div class="cl-result-grid">
+            <div class="cl-card">
+              <span>TIPO</span>
+              <strong id="cl-tipo">-</strong>
+            </div>
+
+            <div class="cl-card">
+              <span>URGÊNCIA</span>
+              <strong class="cl-badge baixa" id="cl-urgencia">-</strong>
+            </div>
+
+            <div class="cl-card full">
+              <span>SETOR RESPONSÁVEL</span>
+              <strong id="cl-setor">-</strong>
+            </div>
+          </div>
+
+          <div class="cl-text-card">
+            <span>RESUMO TÉCNICO</span>
+            <p id="cl-resumo">Aguardando classificação.</p>
+          </div>
+
+          <div class="cl-text-card">
+            <span>AÇÃO SUGERIDA</span>
+            <p id="cl-acao">Aguardando classificação.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="metrics">
+    <div class="metric reveal">
+      <div class="metric-num">5</div>
+      <div class="metric-desc">tipos de chamado classificados</div>
+    </div>
+
+    <div class="metric reveal reveal-delay-1">
+      <div class="metric-num">4</div>
+      <div class="metric-desc">níveis de impacto identificados</div>
+    </div>
+
+    <div class="metric reveal reveal-delay-2">
+      <div class="metric-num">0</div>
+      <div class="metric-desc">dados armazenados no servidor</div>
+    </div>
+  </div>
+
+  <div class="section-full" id="como-funciona">
+    <div class="section-inner">
+      <div class="eyebrow reveal">Como funciona</div>
+      <h2 class="section-title reveal reveal-delay-1">Três passos, resultado imediato</h2>
+      <p class="section-sub reveal reveal-delay-2">Sem configuração, sem cadastro. Cole a mensagem e deixa a IA trabalhar.</p>
+
+      <div class="steps">
+        <div class="step reveal reveal-delay-1">
+          <div class="step-num">01</div>
+          <div>
+            <h3>Você cola a mensagem</h3>
+            <p>Qualquer texto de chamado: e-mail, chat, formulário. O sistema aceita até 2000 caracteres.</p>
+          </div>
+        </div>
+
+        <div class="step-connector reveal"></div>
+
+        <div class="step reveal reveal-delay-2">
+          <div class="step-num">02</div>
+          <div>
+            <h3>A IA processa no back-end</h3>
+            <p>O servidor envia a mensagem ao modelo com um prompt especializado em triagem de suporte. Sua chave de API nunca é exposta.</p>
+          </div>
+        </div>
+
+        <div class="step-connector reveal"></div>
+
+        <div class="step reveal reveal-delay-3">
+          <div class="step-num">03</div>
+          <div>
+            <h3>Você recebe a classificação estruturada</h3>
+            <p>Tipo, urgência, resumo e ação recomendada em JSON, renderizado diretamente na interface.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-full">
+    <div class="section-inner">
+      <div class="eyebrow reveal">Funcionalidades</div>
+      <h2 class="section-title reveal reveal-delay-1">O que o sistema entrega</h2>
+      <p class="section-sub reveal reveal-delay-2">Cada chamado é analisado em quatro dimensões distintas.</p>
+
+      <div class="feat-grid">
+        <div class="feat-card reveal reveal-delay-1">
+          <div class="feat-icon"><i class="ti ti-tag"></i></div>
+          <h3>Tipo do chamado</h3>
+          <p>Identifica se é incidente, dúvida, requisição, reclamação ou elogio.</p>
+        </div>
+
+        <div class="feat-card reveal reveal-delay-2">
+          <div class="feat-icon"><i class="ti ti-alert-triangle"></i></div>
+          <h3>Nível de urgência</h3>
+          <p>Classifica o impacto entre crítica, alta, média e baixa com critérios técnicos.</p>
+        </div>
+
+        <div class="feat-card reveal reveal-delay-3">
+          <div class="feat-icon"><i class="ti ti-file-text"></i></div>
+          <h3>Resumo objetivo</h3>
+          <p>Uma frase clara com o problema central, sem ruído.</p>
+        </div>
+
+        <div class="feat-card reveal reveal-delay-4">
+          <div class="feat-icon"><i class="ti ti-player-play"></i></div>
+          <h3>Ação sugerida</h3>
+          <p>Recomenda a próxima ação para o atendente com base no contexto.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-full">
+    <div class="section-inner">
+      <div class="eyebrow reveal">Categorias</div>
+      <h2 class="section-title reveal reveal-delay-1">Cinco tipos reconhecidos</h2>
+      <p class="section-sub reveal reveal-delay-2">O modelo identifica a natureza do chamado antes de qualquer outra análise.</p>
+
+      <div class="types-grid">
+        <div class="type-card reveal reveal-delay-1">
+          <div class="type-dot" style="background:#ef4444"></div>
+          <div><strong>Incidente</strong><span>sistema fora do ar, falha crítica</span></div>
+        </div>
+
+        <div class="type-card reveal reveal-delay-2">
+          <div class="type-dot" style="background:#3b82f6"></div>
+          <div><strong>Dúvida</strong><span>pergunta de uso ou processo</span></div>
+        </div>
+
+        <div class="type-card reveal reveal-delay-3">
+          <div class="type-dot" style="background:#8b5cf6"></div>
+          <div><strong>Requisição</strong><span>solicitação de acesso ou recurso</span></div>
+        </div>
+
+        <div class="type-card reveal reveal-delay-4">
+          <div class="type-dot" style="background:#f97316"></div>
+          <div><strong>Reclamação</strong><span>insatisfação com o serviço</span></div>
+        </div>
+
+        <div class="type-card reveal" style="grid-column:1/-1">
+          <div class="type-dot" style="background:#22c55e"></div>
+          <div><strong>Elogio</strong><span>feedback positivo sobre atendimento ou produto</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-full">
+    <div class="section-inner">
+      <div class="eyebrow reveal">Priorização</div>
+      <h2 class="section-title reveal reveal-delay-1">Escala de urgência</h2>
+      <p class="section-sub reveal reveal-delay-2">Critérios técnicos claros para cada nível sem ambiguidade.</p>
+
+      <div class="urg-grid">
+        <div class="urg-row reveal reveal-delay-1">
+          <span class="urg-badge u-c">Crítica</span>
+          <p>Sistema fora do ar, perda de dados ou impacto total nas operações.</p>
+        </div>
+
+        <div class="urg-row reveal reveal-delay-2">
+          <span class="urg-badge u-a">Alta</span>
+          <p>Funcionalidade principal comprometida, impacto parcial nas operações.</p>
+        </div>
+
+        <div class="urg-row reveal reveal-delay-3">
+          <span class="urg-badge u-m">Média</span>
+          <p>Problema contornável, com impacto limitado no dia a dia.</p>
+        </div>
+
+        <div class="urg-row reveal reveal-delay-4">
+          <span class="urg-badge u-b">Baixa</span>
+          <p>Dúvida, sugestão, elogio ou problema sem impacto operacional imediato.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-full">
+    <div class="section-inner">
+      <div class="eyebrow reveal">Stack técnica</div>
+      <h2 class="section-title reveal reveal-delay-1">Tecnologias utilizadas</h2>
+      <p class="section-sub reveal reveal-delay-2">Back-end em Node.js com Express. Chave de API protegida no servidor. Saída estruturada em JSON.</p>
+
+      <div class="stack-pills">
+        <div class="tech-pill reveal reveal-delay-1"><i class="ti ti-brand-nodejs"></i>Node.js</div>
+        <div class="tech-pill reveal reveal-delay-2"><i class="ti ti-server"></i>Express</div>
+        <div class="tech-pill reveal reveal-delay-3"><i class="ti ti-brain"></i>OpenRouter API</div>
+        <div class="tech-pill reveal reveal-delay-4"><i class="ti ti-robot"></i>gpt-oss-120b:free</div>
+        <div class="tech-pill reveal"><i class="ti ti-lock"></i>Chave protegida no back-end</div>
+        <div class="tech-pill reveal reveal-delay-1"><i class="ti ti-code"></i>Saída estruturada em JSON</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <h2 class="reveal">Pronto para usar.<br>Sem configuração extra.</h2>
+    <p class="reveal reveal-delay-1">Execute <code>npm start</code> e acesse o classificador no navegador.</p>
+
+    <a class="btn-primary reveal reveal-delay-2" href="#classificador">
+      <i class="ti ti-bolt"></i>
+      Abrir o classificador
+    </a>
+  </div>
+
+  <footer class="site-footer">
+    <span>Ticket Classifier © 2026</span>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    const clInput = document.getElementById('cl-input');
+    const clCount = document.getElementById('cl-count');
+    const clExampleBtn = document.getElementById('cl-example');
+    const clClearBtn = document.getElementById('cl-clear');
+    const clClassifyBtn = document.getElementById('cl-classify');
+
+    const clExamples = [
+      "Quero registrar que o atendente João foi extremamente atencioso e resolveu meu problema em poucos minutos. Parabéns pelo atendimento!",
+      "O sistema de login caiu e nenhum funcionário consegue acessar. Estamos parados há 2 horas e clientes estão aguardando.",
+      "Como faço para exportar o relatório de vendas em PDF? Não encontro essa opção no menu.",
+      "Abri um chamado há 3 dias e ninguém me respondeu ainda. Péssimo atendimento."
+    ];
+
+    function clUpdateCount() {
+      clCount.textContent = clInput.value.length;
+    }
+
+    function clSetLoading(isLoading) {
+      clClassifyBtn.disabled = isLoading;
+
+      clClassifyBtn.innerHTML = isLoading
+        ? '<i class="ti ti-loader-2"></i> Classificando...'
+        : '<i class="ti ti-bolt"></i> Classificar chamado';
+    }
+
+    function clUrgencyClass(urgencia = "") {
+      const value = urgencia.toLowerCase();
+
+      if (value.includes("crítica") || value.includes("critica")) return "critica";
+      if (value.includes("alta")) return "alta";
+      if (value.includes("média") || value.includes("media")) return "media";
+      if (value.includes("baixa")) return "baixa";
+
+      return "";
+    }
+
+    function clRenderResult(result) {
+      const urgEl = document.getElementById('cl-urgencia');
+
+      document.getElementById('cl-tipo').textContent = result.tipo || "-";
+      document.getElementById('cl-setor').textContent = result.setor || "-";
+      document.getElementById('cl-resumo').textContent = result.resumo || "-";
+      document.getElementById('cl-acao').textContent = result.acao || "-";
+
+      urgEl.textContent = result.urgencia || "-";
+      urgEl.className = 'cl-badge ' + clUrgencyClass(result.urgencia);
+    }
+
+    clInput.addEventListener('input', clUpdateCount);
+
+    clExampleBtn.addEventListener('click', () => {
+      const random = clExamples[Math.floor(Math.random() * clExamples.length)];
+      clInput.value = random;
+      clUpdateCount();
+    });
+
+    clClearBtn.addEventListener('click', () => {
+      clInput.value = '';
+      clUpdateCount();
+
+      clRenderResult({
+        tipo: "-",
+        urgencia: "-",
+        setor: "-",
+        resumo: "Aguardando classificação.",
+        acao: "Aguardando classificação."
+      });
+    });
+
+    clClassifyBtn.addEventListener('click', async () => {
+      const text = clInput.value.trim();
+
+      if (!text) {
+        alert("Digite uma mensagem para classificar.");
+        return;
+      }
+
+      clSetLoading(true);
+
+      try {
+        const response = await fetch('/api/classificar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            mensagem: text
+          })
+        });
+
+        const data = await response.json();
+
+        console.log("Resposta da API:", data);
+
+        if (!response.ok) {
+          throw new Error(data.erro || "Erro ao classificar chamado.");
+        }
+
+        const classificacao =
+          data.classificacao ||
+          data.resultado ||
+          data;
+
+        clRenderResult({
+          tipo: classificacao.tipo,
+          urgencia: classificacao.urgencia,
+          setor: classificacao.setor || classificacao.setor_responsavel,
+          resumo: classificacao.resumo || classificacao.resumo_tecnico,
+          acao: classificacao.acao || classificacao.acao_sugerida || classificacao.sugestao
+        });
+
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          "Erro ao conectar com a API.\n\n" +
+          "Verifique se o servidor está rodando em http://localhost:3000"
+        );
+
+      } finally {
+        clSetLoading(false);
+      }
+    });
+
+    clUpdateCount();
+  </script>
+
+</body>
+</html>
