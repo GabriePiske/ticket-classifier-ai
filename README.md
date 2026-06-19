@@ -47,7 +47,6 @@ OPENROUTER_API_KEY=sua_chave_aqui
 ```
 
 > Obtenha sua chave em: https://openrouter.ai/keys  
-> Nunca publique o `.env` em repositórios públicos.
 
 ---
 
@@ -96,8 +95,6 @@ Resposta esperada:
 3. O `server.js` adiciona o system prompt e encaminha para o OpenRouter.
 4. O modelo retorna um JSON estruturado com tipo, urgência, resumo e ação.
 5. A interface exibe o resultado de forma visual.
-
-A chave da API **nunca é exposta no front-end** — ela fica protegida no `.env` e só é usada pelo servidor.
 
 ---
 
